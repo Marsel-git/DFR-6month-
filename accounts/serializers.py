@@ -39,3 +39,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+
+        if not user.check_password(attrs["old_password"]):
+            raise serializers.ValidationError({
+                "old_password": "Старый пароль неверный."
+            })
+
+        if attrs["new_password"] != attrs["new_password2"]:
+            raise serializers.ValidationError({
+                "new_password2": "Пароли не совпадают."
+            })
+
+        return attrs

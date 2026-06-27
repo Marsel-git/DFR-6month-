@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 
-from .serializers import RegisterSerializer, UserSerializer
-from .permissions import IsTeacherOrAdmin, IsOwnerOrAdmin
+from .serializers import RegisterSerializer, UserSerializer, ChangePasswordSerializer
+from .permissions import IsTeacherOrAdmin, IsOwnerOrAdmin,IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
@@ -195,3 +195,22 @@ class GoogleOAuthCallbackView(APIView):
             "refresh": str(refresh),
             "user": UserSerializer(user).data,
         })
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+
+        return Response(
+            {"detail": "Пароль изменён."},
+            status=status.HTTP_200_OK
+        )
